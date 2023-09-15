@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+
+
+<h1>{{ request.user.username }}</h1>
+<form method="post">
+    {% csrf_token %}
+    Generate variant of
+    <select name="category[]">
+        {% for cat in categories %}
+        <option name="category" value="{{cat.name}}">{{cat.name}}</option>
+        {% endfor %}
+    </select>
+    <input type="number" name="difficulty[]" placeholder="Difficulty(%)" min="0" max="100">
+    <button type="submit" name="SUBMIT" value="gen">Generate</button>
+</form>
+
+
+{% endblock %}

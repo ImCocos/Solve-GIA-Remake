@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+
+
+{% for task in tasks %}
+
+<h1><a href="">№{{task.type_number}}.{{task.pk}}({{task.rating}})</a></h1>
+{% autoescape off %}
+{{task.text}}
+<br>
+<h1>Answer:</h1>
+{{task.answer}}
+{% endautoescape %}
+<br>
+{% endfor %}
+
+
+{% endblock %}

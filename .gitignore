@@ -1,5 +1,10 @@
 venv/
+
 .vscode/
-.vscode
+*.vscode
+
 .idea/
-.idea
+*.idea
+
+__pycache__/
+*.py
