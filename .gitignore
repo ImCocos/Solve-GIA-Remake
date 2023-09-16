@@ -8,30 +8,3 @@ venv/
 
 *.idea
 
-__pycache__
-
-*__pycache__
-
-*/__pycache__
-
-*__pycache__/
-
-*/__pycache__/
-
-
-*.pyc
-
-.pyc
-
-*.cpython-311
-
-.cpython-311
-
-*.cpython-311.pyc
-
-.cpython-311.pyc
-
-
-**/__pycache__
-
-**/*.pyc
