@@ -1,4 +1,6 @@
 from django.db import models
+from django.shortcuts import reverse
+
 from Users.models import CustomUser
 
 
@@ -11,6 +13,15 @@ class Category(models.Model):
 
     def __str__(self):
         return f'<Category-{self.name}>'
+    
+    def get_absolute_url(self):
+        return reverse(
+            'show-vars',
+            kwargs={
+                'cat_name': self.name,
+                'page': 0,
+            }
+        )
 
 """
 Old task model:
@@ -37,6 +48,15 @@ class Task(models.Model):
 
     def __str__(self):
         return f'<task-{self.type_number}.{self.pk}>'
+    
+    def get_absolute_url(self):
+        return reverse(
+            'show-task',
+            kwargs={
+                'cat_name': self.category.name,
+                'task_id': self.pk,
+            }
+        )
 
 
 class Variant(models.Model):
@@ -46,6 +66,15 @@ class Variant(models.Model):
 
     def __str__(self):
         return f'<Variant-{self.category.name}>'
+    
+    def get_absolute_url(self):
+        return reverse(
+            'show-variant',
+            kwargs={
+                'cat_name': self.category.name,
+                'var_id': self.pk,
+                'answers': 'on',
+            })
 
 
 class Try(models.Model):
