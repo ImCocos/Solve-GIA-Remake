@@ -18,14 +18,8 @@
 
 
 <script>
-    if (Cookies.get('time') == undefined) {
-        Cookies.set('time', 0);
-    }
-
     function add_second() {
-        if (Cookies.get('time') != undefined) {
-            Cookies.set('time', parseInt(Cookies.get('time')) + 1)
-        }
+        Cookies.set('time', parseInt(Cookies.get('time')) + 1)
     }
 
     setInterval(add_second, 1000)
