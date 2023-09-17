@@ -6,23 +6,19 @@ import random
 from math import ceil
 import time
 
-from .models import *
+from .models import Task, Category, Variant, Attempt, TypeNumber, Result, Homework, CustomGroup
 
 
-def get_task_closets_to_difficulty(type_number, difficulty, category):
-    mini = Task.objects.filter(type_number=type_number, category=category).order_by('rating').first().rating
-    changed_diff = difficulty if difficulty > mini else mini
-    tasks_of_type_number_ordered: list[Task] = list(
-        Task.objects.filter(
-            type_number=type_number,
-            rating__lte=changed_diff).order_by('-rating').values_list('pk', 'rating'))
+def get_task_closets_to_difficulty(type_number, difficulty, Category: Category):
+    type_number_query = Category.type_numbers.get(number=type_number)
+    mini = type_number_query.tasks.all().order_by('rating').first().rating
+    changed_diff = difficulty if difficulty > mini else mini   
+    tasks_of_type_number_ordered = type_number_query.tasks.all().filter(rating__lte=changed_diff).order_by('-rating')
 
-    maxi = tasks_of_type_number_ordered[0][1]
-    tasks = []
-    for task in tasks_of_type_number_ordered:
-        if task[1] == maxi:
-            tasks.append(task)
-    return Task.objects.get(pk=random.choice(tasks)[0])
+    maxi = tasks_of_type_number_ordered.first().rating
+    tasks = list(tasks_of_type_number_ordered.filter(rating=maxi))
+
+    return random.choice(tasks)
 
 
 def index(request: HttpRequest):
@@ -87,20 +83,24 @@ def generate_random_variant(request: HttpRequest, cat_name, difficulty, answers)
         'tasks': [],
         'answers': answers,
     }
+    tns = category.get_str_tns_for_infa()
+    rating_sum = 0
+    tasks = []
+    for i in range(1, category.amount_of_type_numbers + 1):
+        context['tasks'].append((get_task_closets_to_difficulty(i, difficulty, category), tns[i-1]))
+        rating_sum += context['tasks'][i-1][0].rating
+        tasks.append(context['tasks'][i-1][0])
 
-    for i in range(1, 26):
-        context['tasks'].append(get_task_closets_to_difficulty(i, difficulty, category=category))
+    new_var = Variant(category=category, median_rating=rating_sum // category.amount_of_type_numbers)
+    new_var.save()
+    new_var.tasks.set(tasks)
+    new_var.save()
 
-    def new_var_process(Variant, tasks):
-        new_var = Variant(category=category)
-        new_var.save()
-        new_var.tasks.set(tasks)
-        new_var.save()
-    
-    new_var_p = Process(target=new_var_process, args=(Variant, context['tasks']))
-    new_var_p.start()
     context['time'] = time.time() - st
-    return render(request, template_name='SolveGia/show-variant.html', context=context)
+    if answers:
+        return render(request, template_name='SolveGia/show-variant.html', context=context)
+    else:
+        return redirect('solve-variant', cat_name=cat_name, var_id=new_var.pk)
 
 
 def show_vars(request, cat_name, page=0):
@@ -132,10 +132,11 @@ def show_variant(request, cat_name, var_id, answers):
         raise Http404
     
     variant = get_object_or_404(Variant, pk=var_id, category=category)
-
+    tasks = list(variant.tasks.all())
+    tns = category.get_str_tns_for_infa()
     context = {
-        'title': f'Variants of {category.name} - №{variant.pk}',
-        'tasks': list(variant.tasks.all()),
+        'title': f'Variant №{variant.pk}({variant.median_rating})',
+        'tasks': [(tasks[i-1], tns[i-1]) for i in range(1, category.amount_of_type_numbers + 1)],
         'variant': variant,
         'answers': answers,
     }
@@ -143,13 +144,42 @@ def show_variant(request, cat_name, var_id, answers):
     return render(request, template_name='SolveGia/show-variant.html', context=context)
 
 
-def show_task(request, cat_name, task_id):
-    category = get_object_or_404(Category, name=cat_name)
-    task = get_object_or_404(Task, category=category, pk=task_id)
+def show_task(request, task_id):
+    task = get_object_or_404(Task, pk=task_id)
 
     context = {
-        'title': f'Task №{task.type_number}{task.pk} of {category.name}',
+        'title': f'Task №{task.pk}',
         'task': task,
     }
 
     return render(request, template_name='SolveGia/show-task.html', context=context)
+
+
+def solve_variant(request: HttpRequest, cat_name, var_id, task_number=1):
+    category = get_object_or_404(Category, name=cat_name)
+    variant = get_object_or_404(Variant, pk=var_id)
+    if task_number > category.amount_of_type_numbers:
+        raise Http404 
+
+    context = {
+        'title': f'Variant №{variant.pk}({variant.median_rating})',
+        'task': (variant.tasks.all()[task_number - 1], category.get_str_tns_for_infa()[task_number - 1]),
+    }
+
+    if request.method == 'POST':
+        answer = request.POST.get('answer')
+        time = int(request.COOKIES['time'])
+
+        """
+        Мега умная формула которая считает сложность В ПРОЦЕНТАХ...
+        Потом сохраняем сложность в бд.
+        """
+
+        if task_number < category.amount_of_type_numbers:
+            red = redirect('solve-variant', cat_name=cat_name, var_id=var_id, task_number=task_number + 1)
+            red.set_cookie('time', '0')
+            return red
+
+        return redirect('home')
+
+    return render(request, template_name='SolveGia/solve-variant.html', context=context)

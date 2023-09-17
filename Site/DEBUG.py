@@ -18,18 +18,7 @@ from SolveGia.views import get_task_closets_to_difficulty
 
 
 User = CustomUser
-infa = Category.objects.get(name='Informatika')
 
-
-def get_27_tasks(difficulty, category):
-    tasks = []
-    for i in range(1, 26):
-        tasks.append(get_task_closets_to_difficulty(i, difficulty, category))
-    return tasks
-
-# print(get_27_tasks_MP(100, infa))
-print('Started')
-st = time.time()
-for i in range(100):
-    tasks = get_27_tasks(0, infa)
-print(f'Finished in {time.time() - st}')
+infa = Category.objects.get(pk=2)
+infa.amount_of_type_numbers = 25
+infa.save()

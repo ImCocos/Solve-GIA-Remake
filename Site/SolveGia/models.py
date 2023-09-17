@@ -7,9 +7,42 @@ from Users.models import CustomUser
 User = CustomUser
 
 
+class Task(models.Model):
+    text = models.TextField()
+    answer = models.TextField(blank=True, null=True)
+    photos = models.TextField(blank=True)
+    files = models.TextField(blank=True)
+    rating = models.PositiveSmallIntegerField(blank=True, default=0)
+
+    def __str__(self):
+        return f'<Task-{self.pk}>'
+    
+    def get_absolute_url(self):
+        return reverse(
+            'show-task',
+            kwargs={
+                'task_id': self.pk,
+            }
+        )
+
+
+class TypeNumber(models.Model):
+    number = models.PositiveSmallIntegerField()
+    tasks = models.ManyToManyField(Task, related_name='typentotasks')
+    spec_time = models.PositiveIntegerField(default=0) # seconds
+
+
 class Category(models.Model):
     name = models.CharField(max_length=150)
     description = models.CharField(max_length=250)
+    type_numbers = models.ManyToManyField(TypeNumber)
+    amount_of_type_numbers = models.PositiveSmallIntegerField()
+
+    def get_str_tns_for_infa(self):
+        tns = [str(i) for i in range(1, 19)]
+        tns.append('19-21')
+        tns += [str(i) for i in range(22, 28)]
+        return tns
 
     def __str__(self):
         return f'<Category-{self.name}>'
@@ -23,49 +56,15 @@ class Category(models.Model):
             }
         )
 
-"""
-Old task model:
-
-class Task(models.Model):
-    type_number = models.IntegerField(blank=False)
-    text = models.TextField(blank=False)
-    answer = models.TextField(blank=False)
-    photos = models.TextField(blank=True)
-    files = models.TextField(blank=True)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True)
-    rating = models.IntegerField(blank=True, default=0)
-    voices = models.ManyToManyField(User, blank=True)
-"""
-
-class Task(models.Model):
-    type_number = models.IntegerField()
-    text = models.TextField()
-    answer = models.TextField(blank=True, null=True)
-    photos = models.TextField(blank=True)
-    files = models.TextField(blank=True)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
-    rating = models.PositiveSmallIntegerField(blank=True, default=0)
-
-    def __str__(self):
-        return f'<task-{self.type_number}.{self.pk}>'
-    
-    def get_absolute_url(self):
-        return reverse(
-            'show-task',
-            kwargs={
-                'cat_name': self.category.name,
-                'task_id': self.pk,
-            }
-        )
-
 
 class Variant(models.Model):
     tasks = models.ManyToManyField(Task, related_name='totasks')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    median_rating = models.PositiveSmallIntegerField()
 
     def __str__(self):
-        return f'<Variant-{self.category.name}>'
+        return f'<Variant-{self.category.name}-{self.pk}>'
     
     def get_absolute_url(self):
         return reverse(
@@ -77,19 +76,19 @@ class Variant(models.Model):
             })
 
 
-class Try(models.Model):
+class Attempt(models.Model):
     solve_percent = models.FloatField()
 
     def __str__(self):
-        return f'<Try-{self.solve_percent}>'
+        return f'<Attempt-{self.solve_percent}>'
 
 
 class Result(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    tries = models.ManyToManyField(Try, related_name='totries')
+    attempts = models.ManyToManyField(Attempt, related_name='toattempts')
 
     def __str__(self):
-        return f'<Result-{self.user.username}-tries:{len(self.tries.all())}>'
+        return f'<Result-{self.user.username}-attempts:{len(self.attempts.all())}>'
 
 
 class Homework(models.Model):

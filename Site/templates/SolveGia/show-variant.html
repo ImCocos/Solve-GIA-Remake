@@ -3,15 +3,15 @@
 
 
     <h1>This page was generated in {{time}}s</h1>
-    {% for task in tasks %}
-        <h1><a href="{{task.get_absolute_url}}">№{{task.type_number}}.{{task.pk}}({{task.rating}})</a></h1>
+    {% for task_pack in tasks %}
+        <h1><a href="{{task_pack.0.get_absolute_url}}">№{{task_pack.1}}-{{task_pack.0.pk}}({{task_pack.0.rating}})</a></h1>
         {% autoescape off %}
-            {{task.text}}
+            {{task_pack.0.text}}
             <br>
             <h1>Answer:</h1>
             {% if answers %}
-                {% if task.answer %}
-                    {{task.answer}}
+                {% if task_pack.0.answer %}
+                    {{task_pack.0.answer}}
                 {% else %}
                     This task haven't answer
                 {% endif %}
