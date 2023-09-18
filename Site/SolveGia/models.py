@@ -14,6 +14,9 @@ class Task(models.Model):
     files = models.TextField(blank=True)
     rating = models.PositiveSmallIntegerField(blank=True, default=0)
 
+    class Meta:
+        ordering = ['pk', 'rating']
+
     def __str__(self):
         return f'<Task-{self.pk}>'
     

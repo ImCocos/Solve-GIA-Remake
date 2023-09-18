@@ -7,6 +7,7 @@ from multiprocessing import Process, Value, Queue
 from threading import Thread
 
 from asgiref.sync import sync_to_async
+from django.db import connection, reset_queries
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Site.settings')
 django.setup()
@@ -20,5 +21,4 @@ from SolveGia.views import get_task_closets_to_difficulty
 User = CustomUser
 
 infa = Category.objects.get(pk=2)
-infa.amount_of_type_numbers = 25
-infa.save()
+

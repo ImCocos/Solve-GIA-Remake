@@ -1,31 +1,28 @@
 from django.shortcuts import render, redirect, get_object_or_404, Http404, reverse
 from django.http import HttpRequest
+from django.db import connection, reset_queries
+from django.db.models import Prefetch
 
 from multiprocessing import Process
 import random
 from math import ceil
-import time
 
 from .models import Task, Category, Variant, Attempt, TypeNumber, Result, Homework, CustomGroup
 
 from MyUtils.views_wrappers import *
+import time
+from pprint import pprint
 
 
-# @log_execution_time
 def get_task_closets_to_difficulty(type_number, difficulty, Category: Category):
-    type_number_query = Category.type_numbers.get(number=type_number)
-    mini = type_number_query.tasks.all().order_by('rating').first().rating
-    changed_diff = difficulty if difficulty > mini else mini   
-    tasks_of_type_number_ordered = type_number_query.tasks.all().filter(rating__lte=changed_diff).order_by('-rating')
-
-    maxi = tasks_of_type_number_ordered.first().rating
-    tasks = list(tasks_of_type_number_ordered.filter(rating=maxi))
-
-    return random.choice(tasks)
+    mini = type_number.tasks.all()[0].rating
+    changed_diff = difficulty if difficulty > mini else mini
+    tasks_of_type_number_ordered = type_number.tasks.all().filter(rating__lte=changed_diff).order_by('-rating').values_list('pk', 'rating')
+    maxi = tasks_of_type_number_ordered.first()[1]
+    return random.choice(tasks_of_type_number_ordered.filter(rating=maxi))[0]
 
 
-# @log_execution_time
-# @log_session
+@log_queries(False)
 def index(request: HttpRequest):
     categories = list(Category.objects.all())
     context = {
@@ -64,8 +61,9 @@ def index(request: HttpRequest):
     return render(request, template_name='SolveGia/index.html', context=context)
 
 
-# @log_execution_time
+@log_queries(False)
 def generate_random_variant(request: HttpRequest, cat_name, difficulty, answers):
+    reset_queries()
     st = time.time()
     try:
         difficulty = int(difficulty)
@@ -90,33 +88,45 @@ def generate_random_variant(request: HttpRequest, cat_name, difficulty, answers)
         'answers': answers,
     }
     tns = category.get_str_tns_for_infa()
-    rating_sum = 0
-    tasks = []
-    for i in range(1, category.amount_of_type_numbers + 1):
-        context['tasks'].append((get_task_closets_to_difficulty(i, difficulty, category), tns[i-1]))
-        rating_sum += context['tasks'][i-1][0].rating
-        tasks.append(context['tasks'][i-1][0])
+    tasks_ids = []
+
+    type_numbers = category.type_numbers.prefetch_related(Prefetch('tasks', queryset=Task.objects.order_by('rating')))
+
+    for index, query in enumerate(type_numbers):
+        tasks_ids.append(get_task_closets_to_difficulty(query, difficulty, category))
+    
+    tasks = Task.objects.filter(id__in=tasks_ids)
+
+    rating_sum = sum([t.rating for t in tasks])
+
+    for i in range(1, category.amount_of_type_numbers):
+        context['tasks'].append((tasks[i-1], tns[i-1]))
+
 
     new_var = Variant(category=category, median_rating=rating_sum // category.amount_of_type_numbers)
     new_var.save()
     new_var.tasks.set(tasks)
     new_var.save()
+    
+    # save_variant_process = Process(target=save_variant, args=(category,))
+    # save_variant_process.start()
 
     context['time'] = time.time() - st
     if answers:
         return render(request, template_name='SolveGia/show-variant.html', context=context)
     else:
-        return redirect('solve-variant', cat_name=cat_name, var_id=new_var.pk)
+        redir = redirect('solve-variant', cat_name=cat_name, var_id=new_var.pk, task_number=1)
+        return redir
 
 
-# @log_execution_time
+@log_queries(True)
 def show_vars(request, cat_name, page=0):
     category = get_object_or_404(Category, name=cat_name)
     
     if page < 0:
         raise Http404
     
-    variants = list(Variant.objects.filter(category=category)[page * 19:(page + 1) * 19])
+    variants = Variant.objects.filter(category=category)[page * 20:(page * 20) + 20]
 
     context = {
         'title': f'All variants of {category.name} - p{page}',
@@ -127,7 +137,7 @@ def show_vars(request, cat_name, page=0):
     return render(request, template_name='SolveGia/show-vars.html', context=context)
 
 
-# @log_execution_time
+@log_queries(False)
 def show_variant(request, cat_name, var_id, answers):
     st = time.time()
     category = get_object_or_404(Category, name=cat_name)
@@ -152,7 +162,7 @@ def show_variant(request, cat_name, var_id, answers):
     return render(request, template_name='SolveGia/show-variant.html', context=context)
 
 
-# @log_execution_time
+@log_queries(False)
 def show_task(request, task_id):
     task = get_object_or_404(Task, pk=task_id)
 
@@ -164,7 +174,7 @@ def show_task(request, task_id):
     return render(request, template_name='SolveGia/show-task.html', context=context)
 
 
-# @log_execution_time
+@log_queries(False)
 def solve_variant(request: HttpRequest, cat_name, var_id, task_number=1):
     category = get_object_or_404(Category, name=cat_name)
     variant = get_object_or_404(Variant, pk=var_id)
@@ -177,7 +187,7 @@ def solve_variant(request: HttpRequest, cat_name, var_id, task_number=1):
     }
 
     try:
-        current_number_of_session = request.COOKIES[f'var-{var_id}']
+        current_number_of_session = request.session[f'var-{var_id}']
         if int(current_number_of_session) != task_number:
             redir = redirect('solve-variant', cat_name=cat_name, var_id=var_id, task_number=current_number_of_session)
             redir.set_cookie('time', '0')
@@ -187,7 +197,7 @@ def solve_variant(request: HttpRequest, cat_name, var_id, task_number=1):
     except KeyError:
         context['task'] = (variant.tasks.all()[0], category.get_str_tns_for_infa()[0]),
         redir = redirect('solve-variant', cat_name=cat_name, var_id=var_id, task_number=1)
-        redir.set_cookie(f'var-{var_id}', '1')
+        request.session[f'var-{variant.pk}'] = 1
         redir.set_cookie('time', '0')
         return redir
 
@@ -196,11 +206,11 @@ def solve_variant(request: HttpRequest, cat_name, var_id, task_number=1):
         time = int(request.COOKIES['time'])
 
         
-        request.session[f'a-{task_number}'] = {
+        request.session[f'v-{var_id}-a-{task_number}'] = {
             'answer': answer,
             'time': time,
         }
-        results = list([f'{key}: {request.session[key]}'] for key in request.session.keys())
+        # results = list([f'{key}: {request.session[key]}'] for key in request.session.keys())
 
         """
         Мега умная формула которая считает сложность В ПРОЦЕНТАХ...
@@ -208,15 +218,18 @@ def solve_variant(request: HttpRequest, cat_name, var_id, task_number=1):
         """
 
         if task_number < category.amount_of_type_numbers:
-            current_number_of_session = request.COOKIES[f'var-{var_id}']
+            current_number_of_session = request.session[f'var-{var_id}']
             redir = redirect('solve-variant', cat_name=cat_name, var_id=var_id, task_number=task_number + 1)
             redir.set_cookie('time', '0')
-            redir.set_cookie(f'var-{var_id}', str(int(current_number_of_session) + 1))
+            request.session[f'var-{var_id}'] = str(int(current_number_of_session) + 1)
             return redir
         else:
+            redir = redirect('home')
             results = list([f'{key}: {request.session[key]}'] for key in request.session.keys())
             for i in range(1, category.amount_of_type_numbers + 1):
-                del request.session[f'a-{i}']
-            return redirect('home')
+                del request.session[f'v-{var_id}-a-{i}']
+            del request.session[f'var-{var_id}']
+            redir.delete_cookie('time')
+            return redir
 
     return rend

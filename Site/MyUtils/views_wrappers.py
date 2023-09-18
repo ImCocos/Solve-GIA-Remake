@@ -1,5 +1,8 @@
 from django.core.handlers.wsgi import WSGIRequest
 from django.shortcuts import Http404, redirect
+from django.db import connection, reset_queries
+
+from time import time
 
 
 def log_execution_time(foo: callable):
@@ -35,3 +38,25 @@ def log_session(foo: callable):
         return resp
 
     return wrapper
+
+
+def log_queries(print_queries: bool = True):
+    def decorator(foo: callable):
+        def wrapper(*args, **kwargs):
+            reset_queries()
+    
+            st = time()
+
+            resp = foo(*args, **kwargs)
+
+            print(f'\n-----# Function "{foo.__name__}" was done in {round(time()-st, 5)}s #-----')
+            print(f'-----# Queries count while calling "{foo.__name__}" was {len(connection.queries)} #-----\n')
+
+            if print_queries:
+                [print(f'  {ind + 1}:{query}\n') for ind, query in enumerate(connection.queries)]
+            reset_queries()
+            return resp
+
+        return wrapper
+    
+    return decorator
