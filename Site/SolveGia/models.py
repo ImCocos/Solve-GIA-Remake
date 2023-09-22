@@ -95,8 +95,8 @@ class Result(models.Model):
 
 
 class Homework(models.Model):
-    # variant = models.ForeignKey(Variant, on_delete=models.CASCADE)
-    results = models.ManyToManyField(Result, related_name='toresults')
+    variant = models.ForeignKey(Variant, on_delete=models.CASCADE)
+    results = models.ManyToManyField(Result, related_name='toresults', null=True, blank=True)
 
     def __str__(self):
         return f'<Homework-{self.variant}-rs:{len(self.results.all())}>'

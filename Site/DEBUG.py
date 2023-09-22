@@ -20,5 +20,8 @@ from SolveGia.views import get_task_closets_to_difficulty
 
 User = CustomUser
 
-infa = Category.objects.get(pk=2)
+# infa = Category.objects.get(pk=2)
 
+
+admin_status = Status(name='teacher')
+admin_status.save()

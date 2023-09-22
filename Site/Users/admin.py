@@ -1,3 +1,14 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import CustomUser, Status
+
+
+class CustomUserAdmin(admin.ModelAdmin):
+    model = CustomUser
+
+
+class CustomUserStatus(admin.ModelAdmin):
+    model = Status
+
+admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.register(Status, CustomUserStatus)

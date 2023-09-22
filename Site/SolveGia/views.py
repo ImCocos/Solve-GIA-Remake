@@ -6,6 +6,8 @@ from django.db.models import Prefetch
 from multiprocessing import Process
 import random
 from math import ceil
+import os
+from pathlib import Path
 
 from .models import Task, Category, Variant, Attempt, TypeNumber, Result, Homework, CustomGroup
 
@@ -13,6 +15,8 @@ from MyUtils.views_wrappers import *
 import time
 from pprint import pprint
 
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 def get_task_closets_to_difficulty(type_number, difficulty, Category: Category):
     mini = type_number.tasks.all()[0].rating
@@ -32,31 +36,45 @@ def index(request: HttpRequest):
 
     if request.method == 'POST':
         action = request.POST.get('SUBMIT')
+        match action:
+            case 'gen':
+                category = get_object_or_404(Category, name=request.POST.get('category[]'))
+                difficulty = request.POST.get('difficulty[]')
+                answers = request.POST.get('answers')
 
-        if action == 'gen':
-            category = get_object_or_404(Category, name=request.POST.get('category[]'))
-            difficulty = request.POST.get('difficulty[]')
-            answers = request.POST.get('answers')
+                if not answers:
+                    answers = 'off'
 
-            if not answers:
-                answers = 'off'
+                if difficulty == '':
+                    difficulty = random.randint(1, 100)
 
-            if difficulty == '':
-                difficulty = random.randint(1, 100)
+                return redirect(
+                    'gen-r-var',
+                    cat_name=category.name,
+                    difficulty=difficulty,
+                    answers=answers)
+            
+            case 'show-vars':
+                category = get_object_or_404(Category, name=request.POST.get('category[]'))
 
-            return redirect(
-                'gen-r-var',
-                cat_name=category.name,
-                difficulty=difficulty,
-                answers=answers)
-        
-        elif action == 'show-vars':
-            category = get_object_or_404(Category, name=request.POST.get('category[]'))
-
-            return redirect(
-                'show-vars',
-                cat_name=category.name,
-                page=0)
+                return redirect(
+                    'show-vars',
+                    cat_name=category.name,
+                    page=0)
+            
+            case 'show-tasks':
+                type_number = request.POST.get('type-number')
+                cat_name = request.POST.get('category[]')
+                return redirect(
+                    'show-tasks',
+                    cat_name=cat_name,
+                    type_number=type_number
+                    )
+            
+            case 'create':
+                cat_name = request.POST.get('category[]')
+                return redirect('create-variant', cat_name=cat_name)
+            
 
     return render(request, template_name='SolveGia/index.html', context=context)
 
@@ -86,6 +104,7 @@ def generate_random_variant(request: HttpRequest, cat_name, difficulty, answers)
         'title': 'Random variant',
         'tasks': [],
         'answers': answers,
+        'category': category,
     }
     tns = category.get_str_tns_for_infa()
     tasks_ids = []
@@ -233,3 +252,73 @@ def solve_variant(request: HttpRequest, cat_name, var_id, task_number=1):
             return redir
 
     return rend
+
+
+@log_queries(False)
+def show_tasks_of_type(request, cat_name, type_number):
+    category = get_object_or_404(Category, name=cat_name)
+    type_number = get_object_or_404(category.type_numbers.all(), number=type_number)
+
+    context = {
+        'title': f'All tasks №{type_number.number} of {category.name}',
+        'tasks': list(type_number.tasks.all()),
+        'number': category.get_str_tns_for_infa()[type_number.number-1],
+    }
+
+    return render(request, template_name='SolveGia/show-tasks.html', context=context)
+
+
+@log_queries(False)
+def create_variant(request, cat_name):
+    category = get_object_or_404(Category, name=cat_name)
+
+    if request.method == 'POST':
+        tasks_pks = [
+            list(map(int, list(request.POST.getlist(f'tasks-{tn}-[]'))))
+            if request.POST.getlist(f'tasks-{tn}-[]') is not None else []
+            for tn in category.get_str_tns_for_infa()
+            ]
+        pprint(tasks_pks)
+
+
+    cache_page_path = BASE_DIR / 'templates' / 'Cache' / f'{category.name}-create-variant-cache.html'
+    if os.path.exists(cache_page_path):
+        return render(request, template_name=f'Cache/{category.name}-create-variant-cache.html')
+
+    context = {
+        'title': 'Variant creater',
+        'task_pack': [(
+            number, [task for task in list(tn.tasks.order_by('rating').values_list('pk', 'rating'))]
+            ) for number, tn in zip(category.get_str_tns_for_infa(), category.type_numbers.all())
+            ],
+    }
+
+    return render(request, template_name='SolveGia/create-variant.html', context=context)
+
+def solve_homework(request, group_pk, hw_pk):
+    ...
+
+
+def results(request, group_pk):
+    group = get_object_or_404(CustomGroup, pk=group_pk)
+
+    context = {
+        'title': f'Results of {group.name}',
+    }
+
+    hws_results_pack = [
+        {
+            'variant': hw.variant,
+            'results': [
+                {
+                    'user': res.user,
+                    'tries': res.attempts.count(),
+                    'percent': res.attempts.all().order_by('-pk')[0].solve_percent,
+                 }
+                 for res in list(hw.results.all())
+            ]
+        }
+        for hw in list(group.homeworks.all())
+    ]
+    context['results_table'] = hws_results_pack
+    return render(request, template_name='SolveGia/results.html', context=context)

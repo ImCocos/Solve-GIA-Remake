@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.urls import path, include
-from .views import index, generate_random_variant, show_vars, show_variant, show_task, solve_variant
+from .views import *
 
 
 urlpatterns = [
@@ -25,5 +25,9 @@ urlpatterns = [
     path('show-vars/cat-<str:cat_name>/page-<int:page>/', show_vars, name='show-vars'),
     path('show-variant/cat-<str:cat_name>/id-<int:var_id>/answers-<str:answers>', show_variant, name='show-variant'),
     path('show-task/id-<int:task_id>/', show_task, name='show-task'),
+    path('show-tasks/cat-<str:cat_name>/number-<int:type_number>/', show_tasks_of_type, name='show-tasks'),
     path('solve-variant/cat-<str:cat_name>/id-<int:var_id>/task-<int:task_number>/', solve_variant, name='solve-variant'),
+    path('create-variant/cat-<str:cat_name>/', create_variant, name='create-variant'),
+    path('solve-homework/group-<int:group_pk>/hw-<int:hw_pk>/', solve_homework, name='solve-homework'),
+    path('results/group-<int:group_pk>/', results, name='results'),
 ]

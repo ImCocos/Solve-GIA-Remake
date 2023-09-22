@@ -2,7 +2,7 @@
 {% block content %}
 
 
-    <h1><a href="">№{{task.pk}}({{task.rating}})</a></h1>
+    <h1><a href="{{task.get_absolute_url}}">№{{task.pk}}({{task.rating}})</a></h1>
     {% autoescape off %}
         {{task.text}}
         <br>

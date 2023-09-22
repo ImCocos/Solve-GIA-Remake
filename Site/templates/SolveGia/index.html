@@ -27,5 +27,28 @@
     <button type="submit" name="SUBMIT" value="show-vars">Show</button>
 </form>
 
+<form method="post">
+    {% csrf_token %}
+    Show all tasks of
+    <select name="category[]">
+        {% for cat in categories %}
+        <option name="cat" value="{{cat.name}}">{{cat.name}}</option>
+        {% endfor %}
+    </select>
+    and type <input type="number" name="type-number" min="1" placeholder="number">
+    <button type="submit" name="SUBMIT" value="show-tasks">Show</button>
+</form>
+
+<form method="post">
+    {% csrf_token %}
+    Create variant of
+    <select name="category[]">
+        {% for cat in categories %}
+        <option name="cat" value="{{cat.name}}">{{cat.name}}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" name="SUBMIT" value="create">Create</button>
+</form>
+
 
 {% endblock %}
