@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404, Http404, reverse
 from django.http import HttpRequest
 from django.db import connection, reset_queries
-from django.db.models import Prefetch
+from django.db.models import Aggregate, Prefetch, Min, F, Avg, Q, Func, Value, Subquery, IntegerField
+from django.db.models.functions import Abs
 
 from multiprocessing import Process
 import random
@@ -18,12 +19,19 @@ from pprint import pprint
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-def get_task_closets_to_difficulty(type_number, difficulty, Category: Category):
-    mini = type_number.tasks.all()[0].rating
-    changed_diff = difficulty if difficulty > mini else mini
-    tasks_of_type_number_ordered = type_number.tasks.all().filter(rating__lte=changed_diff).order_by('-rating').values_list('pk', 'rating')
-    maxi = tasks_of_type_number_ordered.first()[1]
-    return random.choice(tasks_of_type_number_ordered.filter(rating=maxi))[0]
+
+# @log_queries(False)
+def get_task_closets_to_difficulty(type_number, difficulty):
+    tasks = type_number.tasks\
+    .filter(rating__lte=difficulty)\
+    .annotate(delta=Func(F('rating') - difficulty, function='ABS'))\
+    .order_by('delta')
+
+    return random.choice(tasks.filter(delta=tasks.first().delta))
+
+    for i, task in enumerate(tasks):
+        if task.rating != tasks[0].rating:
+            return random.choice(tasks[:i])
 
 
 @log_queries(False)
@@ -79,7 +87,7 @@ def index(request: HttpRequest):
     return render(request, template_name='SolveGia/index.html', context=context)
 
 
-@log_queries(False)
+@log_queries(True)
 def generate_random_variant(request: HttpRequest, cat_name, difficulty, answers):
     reset_queries()
     st = time.time()
@@ -91,8 +99,11 @@ def generate_random_variant(request: HttpRequest, cat_name, difficulty, answers)
     if not (0 <= difficulty <= 100):
         raise Http404
     
-    category = get_object_or_404(Category, name=cat_name)
-    
+    category = Category.objects\
+    .prefetch_related('type_numbers')\
+    .prefetch_related('type_numbers__tasks')\
+    .get(name=cat_name)
+
     if answers == 'off':
         answers = False
     elif answers == 'on':
@@ -107,14 +118,14 @@ def generate_random_variant(request: HttpRequest, cat_name, difficulty, answers)
         'category': category,
     }
     tns = category.get_str_tns_for_infa()
-    tasks_ids = []
+    tasks = []
 
-    type_numbers = category.type_numbers.prefetch_related(Prefetch('tasks', queryset=Task.objects.order_by('rating')))
+    type_numbers = category.type_numbers.all()
 
     for index, query in enumerate(type_numbers):
-        tasks_ids.append(get_task_closets_to_difficulty(query, difficulty, category))
+        tasks.append(get_task_closets_to_difficulty(query, difficulty))
     
-    tasks = Task.objects.filter(id__in=tasks_ids)
+    
 
     rating_sum = sum([t.rating for t in tasks])
 
@@ -125,7 +136,6 @@ def generate_random_variant(request: HttpRequest, cat_name, difficulty, answers)
     new_var = Variant(category=category, median_rating=rating_sum // category.amount_of_type_numbers)
     new_var.save()
     new_var.tasks.set(tasks)
-    new_var.save()
     
     # save_variant_process = Process(target=save_variant, args=(category,))
     # save_variant_process.start()

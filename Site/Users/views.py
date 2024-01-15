@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from django.contrib.auth.views import LoginView
 
-from aiogram import Bot
+# from aiogram import Bot
 
 from MyUtils.views_wrappers import login_required, log_queries
 # from KafkaUtils.Producer import producer

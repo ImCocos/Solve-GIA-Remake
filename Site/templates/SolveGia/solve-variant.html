@@ -6,7 +6,7 @@
 <form method="post">
     {% csrf_token %}
     <h1>You cant return to this page after sending answer!!!</h1>
-    <h1>Task №{{task.1}}-{{task.0.pk}}({{task.0.rating}})</h1>
+    <h1>Task №{{task.1}}.{{task.0.pk}}({{task.0.rating}})</h1>
     {% autoescape off %}
         {{task.0.text}}
     {% endautoescape %}
