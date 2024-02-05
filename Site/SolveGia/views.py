@@ -239,7 +239,8 @@ def solve_variant(request: HttpRequest, cat_name, var_id, task_number=1):
             'answer': answer,
             'time': time,
         }
-        # results = list([f'{key}: {request.session[key]}'] for key in request.session.keys())
+        results = list([f'{key}: {request.session[key]}'] for key in request.session.keys())
+        print(results)
 
         """
         Мега умная формула которая считает сложность В ПРОЦЕНТАХ...

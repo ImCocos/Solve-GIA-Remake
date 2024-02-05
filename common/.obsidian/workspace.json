@@ -1,0 +1,161 @@
+{
+  "main": {
+    "id": "1c0cb865edc15593",
+    "type": "split",
+    "children": [
+      {
+        "id": "2b3fae49f3128c32",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6d16ed2dbf1895f9",
+            "type": "leaf",
+            "state": {
+              "type": "canvas",
+              "state": {
+                "file": "Solve-GIA-Remake.canvas",
+                "viewState": {
+                  "x": 3020,
+                  "y": -772.7424932975873,
+                  "zoom": -0.8705961087689348
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "0413628c3c5d4d06",
+    "type": "split",
+    "children": [
+      {
+        "id": "575888cd85b16b86",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0790ee0d206bebc8",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "e77750c87eb6ab10",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "383655bcef945bcd",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "right": {
+    "id": "63e0be843dc3153a",
+    "type": "split",
+    "children": [
+      {
+        "id": "b72c9ae2d21e9953",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0959088881e4f346",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Solve-GIA-Remake.canvas",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "824934a95f33103a",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Solve-GIA-Remake.canvas",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "9c8df5cd8ccffd5c",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "b45889bc297a037d",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Solve-GIA-Remake.canvas"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "6d16ed2dbf1895f9",
+  "lastOpenFiles": [
+    "Solve-GIA-Remake.canvas",
+    "scheme.png",
+    "sheme.png",
+    "scheme_v2.0.png",
+    "scheme_v2.png"
+  ]
+}
