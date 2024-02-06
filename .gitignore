@@ -11,3 +11,6 @@ venv/
 
 __pycache__/
 .DS_Store
+
+Site/SolveGia/migrations/__pycache__/
+Site/Users/migrations/__pycache__/
