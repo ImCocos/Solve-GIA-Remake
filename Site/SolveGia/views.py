@@ -308,7 +308,7 @@ def create_variant(request, cat_name):
 
 
 def solve_homework(request, group_pk, hw_pk):
-    return HttpResponse()
+    return render(request, template_name='SolveGia/in-dev.html')
 
 
 def results(request, group_pk):
