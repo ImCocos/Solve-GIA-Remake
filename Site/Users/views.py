@@ -59,27 +59,28 @@ def profile(request):
         if action == 'send':
             tg_id = int(request.POST.get('tg-id'))
 
-            if tg_id:
+            # if tg_id:
 
-                code = ''.join([str(randint(1, 9)) for _ in range(5)])
-                text = f'Your verefication code is `{code}`'
-                msg = {
-                    'type': 'foo',
-                    'foo': {
-                        'name': 'send_message',
-                        'kwargs': {
-                            'chat_id': tg_id,
-                            'text': text,
-                            'parse_mode': 'MarkdownV2',
-                        },
-                        'args': (),
-                    }
-                }
-                producer.produce('bot', json.dumps(msg).encode('ascii'))
-                producer.flush()
-                user.code = code
-                user.save()
-                return redirect('profile')
+            #     code = ''.join([str(randint(1, 9)) for _ in range(5)])
+            #     text = f'Your verefication code is `{code}`'
+            #     msg = {
+            #         'type': 'foo',
+            #         'foo': {
+            #             'name': 'send_message',
+            #             'args': (),
+            #             'kwargs': {
+            #                 'chat_id': tg_id,
+            #                 'text': text,
+            #                 'parse_mode': 'MarkdownV2',
+            #             },
+            #         }
+            #     }
+            #     producer.produce('bot', json.dumps(msg).encode('ascii'))
+            #     producer.flush()
+            #     user.code = code
+            #     user.save()
+                # return redirect('profile')
+            return redirect('profile')
 
         elif action == 'set':
             secret_code = request.POST.get('code')
@@ -101,7 +102,7 @@ def profile(request):
             new_group.save()
 
             return redirect('profile')
-        
+
         elif action == 'set-hw':
             group = get_object_or_404(CustomGroup, pk=int(request.POST.get('set-hw-for-group[]')))
             variant = get_object_or_404(Variant, pk=int(request.POST.get('hw-variant-id')))
@@ -112,7 +113,7 @@ def profile(request):
             group.homeworks.add(new_hw)
 
             return redirect('profile')
-        
+
         elif action == 'add-user':
             group = get_object_or_404(CustomGroup, pk=int(request.POST.get('group[]')))
             sub_user = get_object_or_404(CustomUser, pk=int(request.POST.get('user-pk')))

@@ -110,3 +110,11 @@ class CustomGroup(models.Model):
 
     def __str__(self):
         return f'<CustomGroup-{self.name}-hws:{len(self.homeworks.all())}>'
+
+    def results_url(self):
+        return reverse(
+            'results',
+            kwargs={
+                'group_pk': self.pk
+            }
+        )

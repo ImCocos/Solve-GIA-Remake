@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.urls import reverse
 
 
 class Status(models.Model):
@@ -16,11 +17,16 @@ class CustomUser(AbstractUser):
     solved = models.PositiveIntegerField(blank=True, null=True)
     failed = models.PositiveIntegerField(blank=True, null=True)
     code = models.CharField(max_length=5, blank=True, null=True)
-    in_groups = models.CharField(max_length=500, null=True)
+    in_groups = models.CharField(max_length=500, blank=True, null=True)
+
+    def profile_url(self):
+        return reverse(
+            'profile'
+        )
 
     def __str__(self):
         return f'<CustomUser-{self.pk}-{self.username}>'
-    
+
     def get_groups(self):
         if self.in_groups:
             return list(set(list(map(int, self.in_groups.split('.')))))

@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404, Http404, reverse
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from django.db import connection, reset_queries
 from django.db.models import Aggregate, Prefetch, Min, F, Avg, Q, Func, Value, Subquery, IntegerField
 from django.db.models.functions import Abs
@@ -61,7 +61,7 @@ def index(request: HttpRequest):
                     cat_name=category.name,
                     difficulty=difficulty,
                     answers=answers)
-            
+
             case 'show-vars':
                 category = get_object_or_404(Category, name=request.POST.get('category[]'))
 
@@ -69,7 +69,7 @@ def index(request: HttpRequest):
                     'show-vars',
                     cat_name=category.name,
                     page=0)
-            
+
             case 'show-tasks':
                 type_number = request.POST.get('type-number')
                 cat_name = request.POST.get('category[]')
@@ -78,11 +78,11 @@ def index(request: HttpRequest):
                     cat_name=cat_name,
                     type_number=type_number
                     )
-            
+
             case 'create':
                 cat_name = request.POST.get('category[]')
                 return redirect('create-variant', cat_name=cat_name)
-            
+
 
     return render(request, template_name='SolveGia/index.html', context=context)
 
@@ -98,7 +98,7 @@ def generate_random_variant(request: HttpRequest, cat_name, difficulty, answers)
 
     if not (0 <= difficulty <= 100):
         raise Http404
-    
+
     category = Category.objects\
     .prefetch_related('type_numbers')\
     .prefetch_related('type_numbers__tasks')\
@@ -124,8 +124,8 @@ def generate_random_variant(request: HttpRequest, cat_name, difficulty, answers)
 
     for index, query in enumerate(type_numbers):
         tasks.append(get_task_closets_to_difficulty(query, difficulty))
-    
-    
+
+
 
     rating_sum = sum([t.rating for t in tasks])
 
@@ -136,7 +136,7 @@ def generate_random_variant(request: HttpRequest, cat_name, difficulty, answers)
     new_var = Variant(category=category, median_rating=rating_sum // category.amount_of_type_numbers)
     new_var.save()
     new_var.tasks.set(tasks)
-    
+
     # save_variant_process = Process(target=save_variant, args=(category,))
     # save_variant_process.start()
 
@@ -151,10 +151,10 @@ def generate_random_variant(request: HttpRequest, cat_name, difficulty, answers)
 @log_queries(True)
 def show_vars(request, cat_name, page=0):
     category = get_object_or_404(Category, name=cat_name)
-    
+
     if page < 0:
         raise Http404
-    
+
     variants = Variant.objects.filter(category=category)[page * 20:(page * 20) + 20]
 
     context = {
@@ -170,14 +170,14 @@ def show_vars(request, cat_name, page=0):
 def show_variant(request, cat_name, var_id, answers):
     st = time.time()
     category = get_object_or_404(Category, name=cat_name)
-    
+
     if answers == 'off':
         answers = False
     elif answers == 'on':
         answers = True
     else:
         raise Http404
-    
+
     variant = get_object_or_404(Variant, pk=var_id, category=category)
     tasks = list(variant.tasks.all())
     tns = category.get_str_tns_for_infa()
@@ -234,7 +234,7 @@ def solve_variant(request: HttpRequest, cat_name, var_id, task_number=1):
         answer = request.POST.get('answer')
         time = int(request.COOKIES['time'])
 
-        
+
         request.session[f'v-{var_id}-a-{task_number}'] = {
             'answer': answer,
             'time': time,
@@ -306,8 +306,9 @@ def create_variant(request, cat_name):
 
     return render(request, template_name='SolveGia/create-variant.html', context=context)
 
+
 def solve_homework(request, group_pk, hw_pk):
-    ...
+    return HttpResponse()
 
 
 def results(request, group_pk):
